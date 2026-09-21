@@ -4,19 +4,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.jlogicsoftware.kimeria.Assets;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Minimal, dependency-free TMX/TSX reader.
+ * Minimal, dependency-free TMX/TSX reader (see {@link MiniXml} for why it's
+ * a hand-rolled parser rather than {@code javax.xml}/DOM).
  *
  * <p>Deliberately hand-rolled instead of using gdx's Tiled extension: this
  * keeps every coordinate exactly as authored in the .tmx file (top-left
@@ -58,8 +54,7 @@ public class TiledMapData {
         try {
             TiledMapData data = new TiledMapData();
             FileHandle tmxFile = Gdx.files.internal(tmxPath);
-            Document doc = parse(tmxFile);
-            Element mapEl = doc.getDocumentElement();
+            XmlEl mapEl = MiniXml.parse(tmxFile.readString("UTF-8"));
             data.widthTiles = intAttr(mapEl, "width", 0);
             data.heightTiles = intAttr(mapEl, "height", 0);
             data.tileWidth = intAttr(mapEl, "tilewidth", 16);
@@ -67,9 +62,9 @@ public class TiledMapData {
             data.backgroundGrid = new int[data.heightTiles][data.widthTiles];
 
             String tsxSource = null;
-            for (Element ts : children(mapEl, "tileset")) {
+            for (XmlEl ts : mapEl.children("tileset")) {
                 data.firstGid = intAttr(ts, "firstgid", 1);
-                tsxSource = ts.getAttribute("source");
+                tsxSource = ts.attr("source", "");
             }
             if (tsxSource != null && !tsxSource.isEmpty()) {
                 String dir = tmxFile.parent().path();
@@ -77,10 +72,10 @@ public class TiledMapData {
                 loadTileset(tsxFile, data, assets);
             }
 
-            for (Element layerEl : children(mapEl, "layer")) {
-                Element dataEl = firstChild(layerEl, "data");
+            for (XmlEl layerEl : mapEl.children("layer")) {
+                XmlEl dataEl = layerEl.firstChild("data");
                 if (dataEl == null) continue;
-                String csv = dataEl.getTextContent().trim();
+                String csv = dataEl.text.trim();
                 String[] cells = csv.split("\\s*,\\s*");
                 int i = 0;
                 for (int r = 0; r < data.heightTiles; r++) {
@@ -93,22 +88,22 @@ public class TiledMapData {
                 }
             }
 
-            for (Element groupEl : children(mapEl, "objectgroup")) {
-                String groupName = groupEl.getAttribute("name");
+            for (XmlEl groupEl : mapEl.children("objectgroup")) {
+                String groupName = groupEl.attr("name", "");
                 List<TiledObject> objects = new ArrayList<>();
-                for (Element objEl : children(groupEl, "object")) {
+                for (XmlEl objEl : groupEl.children("object")) {
                     TiledObject obj = new TiledObject();
                     obj.id = intAttr(objEl, "id", 0);
-                    obj.name = objEl.getAttribute("name");
-                    obj.type = objEl.hasAttribute("type") ? objEl.getAttribute("type") : objEl.getAttribute("class");
+                    obj.name = objEl.attr("name", "");
+                    obj.type = objEl.hasAttr("type") ? objEl.attr("type", "") : objEl.attr("class", "");
                     obj.x = floatAttr(objEl, "x", 0);
                     obj.y = floatAttr(objEl, "y", 0);
                     obj.width = floatAttr(objEl, "width", 0);
                     obj.height = floatAttr(objEl, "height", 0);
-                    Element propsEl = firstChild(objEl, "properties");
+                    XmlEl propsEl = objEl.firstChild("properties");
                     if (propsEl != null) {
-                        for (Element propEl : children(propsEl, "property")) {
-                            obj.properties.put(propEl.getAttribute("name"), propEl.getAttribute("value"));
+                        for (XmlEl propEl : propsEl.children("property")) {
+                            obj.properties.put(propEl.attr("name", ""), propEl.attr("value", ""));
                         }
                     }
                     objects.add(obj);
@@ -122,15 +117,14 @@ public class TiledMapData {
         }
     }
 
-    private static void loadTileset(FileHandle tsxFile, TiledMapData data, Assets assets) throws Exception {
-        Document doc = parse(tsxFile);
-        Element tsEl = doc.getDocumentElement();
+    private static void loadTileset(FileHandle tsxFile, TiledMapData data, Assets assets) {
+        XmlEl tsEl = MiniXml.parse(tsxFile.readString("UTF-8"));
         int tileWidth = intAttr(tsEl, "tilewidth", data.tileWidth);
         int tileHeight = intAttr(tsEl, "tileheight", data.tileHeight);
         int columns = intAttr(tsEl, "columns", 1);
         int tileCount = intAttr(tsEl, "tilecount", 0);
-        Element imageEl = firstChild(tsEl, "image");
-        String imageSource = imageEl.getAttribute("source");
+        XmlEl imageEl = tsEl.firstChild("image");
+        String imageSource = imageEl.attr("source", "");
         String dir = tsxFile.parent().path();
         String imagePath = normalize(dir + "/" + imageSource);
 
@@ -155,35 +149,13 @@ public class TiledMapData {
         return String.join("/", parts);
     }
 
-    private static Document parse(FileHandle file) throws Exception {
-        return DocumentBuilderFactory.newInstance().newDocumentBuilder()
-            .parse(file.read());
-    }
-
-    private static List<Element> children(Element parent, String tag) {
-        List<Element> result = new ArrayList<>();
-        NodeList list = parent.getChildNodes();
-        for (int i = 0; i < list.getLength(); i++) {
-            Node n = list.item(i);
-            if (n instanceof Element && n.getNodeName().equals(tag)) {
-                result.add((Element) n);
-            }
-        }
-        return result;
-    }
-
-    private static Element firstChild(Element parent, String tag) {
-        List<Element> found = children(parent, tag);
-        return found.isEmpty() ? null : found.get(0);
-    }
-
-    private static int intAttr(Element el, String name, int fallback) {
-        String v = el.getAttribute(name);
+    private static int intAttr(XmlEl el, String name, int fallback) {
+        String v = el.attr(name, "");
         return v.isEmpty() ? fallback : Integer.parseInt(v);
     }
 
-    private static float floatAttr(Element el, String name, float fallback) {
-        String v = el.getAttribute(name);
+    private static float floatAttr(XmlEl el, String name, float fallback) {
+        String v = el.attr(name, "");
         return v.isEmpty() ? fallback : Float.parseFloat(v);
     }
 }
