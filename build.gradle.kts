@@ -26,3 +26,15 @@ subprojects {
 tasks.register("run") {
     dependsOn(":lwjgl3:run")
 }
+
+// Same idea for the web build's plugin-generated task names, which are long
+// because they encode module + platform + JS-vs-Wasm + variant.
+tasks.register("runWeb") {
+    description = "Starts the web build's dev server with auto-reload, same as ./gradlew :web:gdx_teavm_web_js_run."
+    dependsOn(":web:gdx_teavm_web_js_run")
+}
+
+tasks.register("buildWeb") {
+    description = "Builds the static, minified web output, same as ./gradlew :web:gdx_teavm_web_js_release_build."
+    dependsOn(":web:gdx_teavm_web_js_release_build")
+}
