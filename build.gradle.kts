@@ -38,3 +38,10 @@ tasks.register("buildWeb") {
     description = "Builds the static, minified web output, same as ./gradlew :web:gdx_teavm_web_js_release_build."
     dependsOn(":web:gdx_teavm_web_js_release_build")
 }
+
+// Same convention for the desktop fat jar, so no build target needs a
+// module path memorized.
+tasks.register("buildDesktop") {
+    description = "Builds a runnable desktop fat jar at lwjgl3/build/libs/, same as ./gradlew :lwjgl3:jar."
+    dependsOn(":lwjgl3:jar")
+}
