@@ -15,10 +15,17 @@ shockwave + ripple, **F4** advance level, **F5** reach a checkpoint.
 ```sh
 ./gradlew run     # builds and launches the desktop build
 ./gradlew :lwjgl3:jar     # builds a runnable fat jar at lwjgl3/build/libs/
+
+./gradlew :web:gdx_teavm_web_js_run             # web build, dev server with auto-reload
+./gradlew :web:gdx_teavm_web_js_release_build   # static, minified output at web/build/dist/js/release/webapp/
 ```
 
 (`./gradlew` is the Gradle wrapper committed to this repo — no separate Gradle install
-needed. `run` is a root-level alias for `:lwjgl3:run`, the only runnable module.)
+needed. `run` is a root-level alias for `:lwjgl3:run`. The web build uses the
+[gdx-teavm](https://github.com/xpenatan/gdx-teavm) backend, which compiles ordinary JVM
+bytecode to JavaScript via [TeaVM](https://teavm.org/) — see `web/build.gradle.kts` and
+`web/src/main/java/.../WebLauncher.java`. `.github/workflows/deploy-web.yml` builds and
+deploys the release output to GitHub Pages on every push to `main`.)
 
 ### Troubleshooting: window fails to open with a `Checks.check` NullPointerException
 
