@@ -38,3 +38,20 @@ tasks.register("buildWeb") {
     description = "Builds the static, minified web output, same as ./gradlew :web:gdx_teavm_web_js_release_build."
     dependsOn(":web:gdx_teavm_web_js_release_build")
 }
+
+// Same convention for the desktop fat jar, so no build target needs a
+// module path memorized.
+tasks.register("buildDesktop") {
+    description = "Builds a runnable desktop fat jar at lwjgl3/build/libs/, same as ./gradlew :lwjgl3:jar."
+    dependsOn(":lwjgl3:jar")
+}
+
+// Native installer/app-image (bundles its own JRE -- nothing else to
+// install to play): .exe/.msi on Windows, .app/.dmg on macOS,
+// .deb/.rpm/app-image on Linux, at lwjgl3/build/jpackage/. jpackage can only
+// target the OS it runs on, so this produces one platform's installer per
+// invocation -- see .github/workflows/deploy-desktop.yml for all three.
+tasks.register("packageDesktop") {
+    description = "Builds a native installer for this OS (bundled JRE, no local Java needed), same as ./gradlew :lwjgl3:jpackage."
+    dependsOn(":lwjgl3:jpackage")
+}

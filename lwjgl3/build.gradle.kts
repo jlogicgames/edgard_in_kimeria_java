@@ -3,6 +3,7 @@ val appName: String by project
 
 plugins {
     application
+    id("org.beryx.runtime") version "2.0.1"
 }
 
 dependencies {
@@ -74,6 +75,40 @@ tasks.jar {
     }
     dependsOn(configurations.runtimeClasspath)
     from({ configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) } })
+}
+
+// Native installers/app-images via jpackage (bundles its own JRE, so no
+// local Java install is needed to play): `.exe`/`.msi` on Windows,
+// `.app`/`.dmg` on macOS, `.deb`/`.rpm`/app-image on Linux. jpackage can
+// only build for the OS it runs on, so CI runs this per-OS (see
+// .github/workflows/deploy-desktop.yml) rather than cross-building.
+runtime {
+    options.addAll(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
+
+    launcher {
+        noConsole = true
+        val isMac = org.gradle.internal.os.OperatingSystem.current().isMacOsX
+        jvmArgs = if (isMac) listOf("-XstartOnFirstThread") else listOf()
+    }
+
+    jpackage {
+        imageName = appName
+        installerName = appName
+        // jpackage's macOS bundler rejects a leading 0 (rejects "0.0.1", the
+        // project's library version) -- app-version needs its own value.
+        appVersion = "1.0.0"
+
+        val os = org.gradle.internal.os.OperatingSystem.current()
+        if (os.isWindows) {
+            installerOptions.addAll(listOf("--win-menu", "--win-shortcut"))
+        } else if (os.isLinux) {
+            installerOptions.addAll(listOf("--linux-shortcut", "--linux-package-name", appName))
+        } else if (os.isMacOsX) {
+            // macOS wants this at 16 characters or under.
+            installerOptions.add("--mac-package-name")
+            installerOptions.add("Kimeria")
+        }
+    }
 }
 
 tasks.named<JavaExec>("run") {
