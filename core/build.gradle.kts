@@ -2,7 +2,6 @@ val gdxVersion: String by project
 
 dependencies {
     api("com.badlogicgames.gdx:gdx:$gdxVersion")
-    api("com.badlogicgames.gdx:gdx-freetype:$gdxVersion")
     api("com.badlogicgames.gdx-controllers:gdx-controllers-core:2.2.4")
 
     testImplementation("com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion")

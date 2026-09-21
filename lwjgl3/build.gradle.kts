@@ -9,8 +9,39 @@ dependencies {
     implementation(project(":core"))
     implementation("com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion")
     implementation("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop")
-    implementation("com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop")
     implementation("com.badlogicgames.gdx-controllers:gdx-controllers-desktop:2.2.4")
+}
+
+// A separate source set (and classpath) for the one-off font-baking tool
+// below, kept off the app's own dependencies -- and so out of the shipped
+// jar: the GWT/web build can't run FreeTypeFontGenerator at all, so fonts
+// are pre-baked to bitmap files once on desktop here and shipped as plain
+// assets for every platform, including this one. gdx-freetype itself isn't
+// a runtime dependency of the game anymore, see Assets.font().
+sourceSets {
+    create("fontBaker") {
+        java.srcDir("src/fontBaker/java")
+    }
+}
+
+val fontBakerImplementation: Configuration by configurations.getting
+
+dependencies {
+    fontBakerImplementation(project(":core"))
+    fontBakerImplementation("com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion")
+    fontBakerImplementation("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop")
+    fontBakerImplementation("com.badlogicgames.gdx:gdx-freetype:$gdxVersion")
+    fontBakerImplementation("com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop")
+    fontBakerImplementation("com.badlogicgames.gdx:gdx-tools:$gdxVersion") {
+        exclude(group = "com.badlogicgames.gdx", module = "gdx-backend-lwjgl")
+    }
+}
+
+tasks.register<JavaExec>("bakeFonts") {
+    description = "Regenerates assets/fonts/generated/*.fnt+.png from the .ttf sources. Run after changing a font, its sizes, or the baked charset."
+    classpath = sourceSets["fontBaker"].runtimeClasspath
+    mainClass.set("com.jlogicsoftware.kimeria.tools.FontBaker")
+    workingDir = rootProject.file("assets")
 }
 
 // libGDX 1.14.2's gdx-backend-lwjgl3 bundles LWJGL 3.3.3, which fails to
