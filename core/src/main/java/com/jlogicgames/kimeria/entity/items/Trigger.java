@@ -1,0 +1,17 @@
+package com.jlogicgames.kimeria.entity.items;
+
+import com.jlogicgames.kimeria.entity.Entity;
+
+/** Invisible zone that, when the player interacts on it, activates matching {@link Actionable}s. */
+public class Trigger extends Entity {
+    public final String targetId;
+
+    public Trigger(float x, float y, float w, float h, String targetId) {
+        super(x, y, w, h);
+        this.targetId = targetId;
+    }
+
+    @Override
+    public void update(float dt) {
+    }
+}

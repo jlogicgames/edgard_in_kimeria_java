@@ -1,0 +1,136 @@
+# Edgard in Kimeria
+
+A 2D platformer, ported to Java and [libGDX](https://libgdx.com/) from the project's
+Flutter/Flame version (with reference to its separate Rust/Bevy version for feature parity —
+full menu system, localization, gamepad support, dev hotkeys).
+
+Controls: **WASD / arrows** move, **J** jump, **K** attack, **L** interact, **Esc** pause.
+Gamepad: **left stick / D-pad** move, **South** jump, **West**/**East** attack, **North**
+interact, **Start** pause. Menus: **arrows/Tab** navigate, **Enter/Space/A** confirm,
+**Esc/B** back. Debug keys: **F1** hitbox gizmos, **F2** invulnerability, **F3** spawn
+shockwave + ripple, **F4** advance level, **F5** reach a checkpoint.
+
+## Building and running
+
+```sh
+./gradlew run     # builds and launches the desktop build
+./gradlew :lwjgl3:jar     # builds a runnable fat jar at lwjgl3/build/libs/
+```
+
+(`./gradlew` is the Gradle wrapper committed to this repo — no separate Gradle install
+needed. `run` is a root-level alias for `:lwjgl3:run`, the only runnable module.)
+
+### Troubleshooting: window fails to open with a `Checks.check` NullPointerException
+
+```
+Exception in thread "main" java.lang.NullPointerException
+	at org.lwjgl.system.Checks.check(Checks.java:188)
+	at org.lwjgl.glfw.GLFW.nglfwGetMonitorPos(...)
+```
+
+Two different causes produce this same crash:
+
+1. **The display is asleep or locked** when the game launches — GLFW can't enumerate
+   monitors in that state. Wake the screen and re-run.
+2. **LWJGL's bundled GLFW native fails to enumerate monitors** even on an awake display,
+   observed on very new macOS releases; not specific to this game. Two mitigations are
+   already applied in `lwjgl3/build.gradle.kts`: forcing a newer LWJGL (3.4.3) via a
+   dependency resolution override, and, if a system GLFW is installed, pointing LWJGL at it
+   instead of its bundled copy:
+
+   ```sh
+   brew install glfw
+   ```
+
+   The `run` task auto-detects `/opt/homebrew/lib/libglfw.dylib` (or the Intel Homebrew
+   path) and passes `-Dorg.lwjgl.glfw.libname=...` when present.
+
+## Feature parity
+
+- [x] Player movement, jump, gravity, coyote time, quicksand slowdown, wall clamber/jump
+- [x] Tile collision — solid, one-way platform, wall, quicksand
+- [x] Tilemap rendering from the unmodified `.tmx`/`.tsx`, with viewport culling
+- [x] Bat, Yellow mob, Red mob — patrol/chase/attack, bullet time near a Bat
+- [x] Sword attack killing enemies
+- [x] Collectables (coin + ripple, heart + shockwave), Bomb (explosion, kills player)
+- [x] Falling platform — warning torch, delay, drop; carries the player down without
+      losing contact
+- [x] Escalator — patrol, carries the player (including vertically), trigger toggles it
+- [x] Trigger → actionable wall removal and torch toggle
+- [x] Checkpoint → next level, with wrap; death, respawn, life count, game over
+- [x] Torch, firefly, rain ambience; fog effect
+- [x] Shockwave/ripple/bomb-explosion shaders (ported to GLSL, see Assets below)
+- [x] HUD, main menu, About, Options, pause menu, game over screen
+- [x] Keyboard, mouse and gamepad menu navigation
+- [x] English/Ukrainian localization, switchable from Options
+- [x] Main-menu music with fade in/out, button click/hover sounds, gameplay SFX
+- [x] Dev hotkeys (F1–F5, see Controls above)
+- [ ] Chromatic-aberration glitch post-process — present in the Rust version, off by
+      default there too; not ported (see Deviations below)
+
+## Deviations from the source projects
+
+- **The coin-pickup ripple no longer distorts the rendered background.** The Flame
+  original captures the whole scene through a global shader and displaces its pixels;
+  reproducing that needs an offscreen framebuffer capture-and-redraw per ripple. Since
+  it's a one-off cosmetic flourish, it's the same expanding-ring shader as the heart
+  pickup's shockwave, tinted gold, instead.
+- **`Torch`'s particle system is a pooled-particle reimplementation**, not a port of
+  dozens of independent per-particle timers driving Skia canvas draws with blur mask
+  filters (`SpriteBatch` has no blur-mask equivalent). Visual language (flickering core
+  flame, rising embers, drifting smoke, green magic sparkles) is kept, tuned down from an
+  early pass that over-saturated to white with too many concurrent additive particles.
+- **The chromatic-aberration glitch post-process wasn't ported.** It's off by default in
+  the Rust version and dead code in the Flame version (never instantiated) — not reachable
+  in either source this drew from.
+- **No touch controls** (on-screen joystick/jump button) — present in the Rust version,
+  out of scope for a desktop-first port.
+- **Menus are hand-drawn immediate-mode UI**, not Scene2D, to avoid pulling in a full
+  Scene2D skin for a handful of simple screens.
+
+## Architecture
+
+The whole game renders through a **Y-down** `OrthographicCamera`
+(`camera.setToOrtho(true, ...)`, see `KimeriaGame`) on purpose: every coordinate in the
+source projects, and in the raw `.tmx` level files, has (0,0) at the top-left with Y
+growing downward. Matching that convention meant the ported physics, collision and spawn
+code (`Player`, `CollideBody`, `Level`) could be translated close to line-for-line instead
+of flipping signs throughout. The consequence: every loaded `TextureRegion` (see `Assets`)
+is pre-flipped vertically to compensate, since libGDX's default texture orientation assumes
+a Y-up camera. Text is the exception — a `BitmapFont`'s glyph quads are built from UVs
+baked into each `Glyph` at generation time, not from its page `TextureRegion`, so flipping
+the region has no effect on it; text is instead drawn through a separate, plain Y-up
+projection sized to the same logical resolution (see `Overlay`'s and `Hud`'s class docs).
+
+Level data (`.tmx`/`.tsx`) is read with a small hand-rolled parser (`tiled.TiledMapData`)
+instead of libGDX's `gdx-tiled` extension, specifically to avoid that extension's
+row-flipping (which assumes the same Y-up convention) and keep tile/object coordinates
+identical to the source file.
+
+Package layout:
+
+- `entity.player.Player`, `entity.enemy.{Enemy,Bat,YellowMob,RedMob}` — actors
+- `entity.items.*`, `entity.environment.*`, `entity.objects.*` — level objects
+- `physics.{GravityBody,CollideBody,CollisionUtils}` — gravity and AABB collision
+- `effects.*` — particle/shader effects
+- `world.Level` — loads a `.tmx`, spawns everything, owns the per-frame update/render pass
+- `ui.*` — HUD, menus, keyboard/gamepad/mouse navigation
+- `localization.*` — `Msg`/`Language`, English and Ukrainian
+- `input.GamepadInput` — generic Xbox-style controller mapping via `gdx-controllers`
+- `KimeriaGame` — the whole game and its menu states in one place
+
+A fixed-timestep physics accumulator (matching the source projects) was tried and dropped:
+even at a rock-steady 60fps average, real frame durations wobble slightly around 1/60, so
+the accumulator would sometimes step physics twice in one rendered frame and zero times in
+the next — invisible in an FPS counter but visible as jittery movement. `Player` instead
+steps physics once per rendered frame with that frame's own (clamped) delta.
+
+## Assets
+
+Images, audio and Tiled maps are copied verbatim from the Flame project's `assets/`.
+Fonts (`NanoPlus.ttf`, `QuestSquare.ttf`) and `main_menu.mp3`/`button_click.wav` are pulled
+from the Rust version, which has them and the Flame baseline doesn't. `button_click.wav`
+needed re-encoding from `WAVE_FORMAT_EXTENSIBLE` to plain PCM — libGDX's WAV decoder
+rejects the former. The GLSL shaders under `assets/shaders/*.frag` are ported from the
+Flame project's Flutter `FragmentProgram` shaders (already GLSL, just wrapped in Flutter's
+`runtime_effect.glsl` macros) to plain desktop GLSL consumed via libGDX's `ShaderProgram`.

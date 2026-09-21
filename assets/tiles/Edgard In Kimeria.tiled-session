@@ -1,0 +1,70 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "forest-1.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "Forest.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1.9955,
+            "scaleInEditor": 2.9244
+        },
+        "Forest1.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 3.2218
+        },
+        "forest-1.tmx": {
+            "expandedObjectLayers": [
+                3,
+                2
+            ],
+            "scale": 1.45,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 316.2068965517242,
+                "y": 205.8620689655172
+            }
+        },
+        "forest.tmx": {
+            "expandedObjectLayers": [
+                3,
+                2
+            ],
+            "scale": 0.8474,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 640.1935331602549,
+                "y": 262.5678546141137
+            }
+        }
+    },
+    "last.imagePath": "/Users/amerezhanyi/Developer/edgard_in_kimeria/assets/images/Tileset",
+    "map.height": 23,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 40,
+    "openFiles": [
+        "Forest.tsx",
+        "forest.tmx",
+        "forest-1.tmx"
+    ],
+    "project": "Edgard In Kimeria.tiled-project",
+    "property.type": "int",
+    "recentFiles": [
+        "Forest.tsx",
+        "forest.tmx",
+        "forest-1.tmx",
+        "Forest1.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}
