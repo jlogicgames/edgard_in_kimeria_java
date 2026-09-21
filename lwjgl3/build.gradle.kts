@@ -26,7 +26,7 @@ configurations.all {
 }
 
 application {
-    mainClass.set("com.jlogicgames.kimeria.lwjgl3.Lwjgl3Launcher")
+    mainClass.set("com.jlogicsoftware.kimeria.lwjgl3.Lwjgl3Launcher")
 }
 
 sourceSets {
@@ -39,7 +39,7 @@ tasks.jar {
     archiveBaseName.set(appName)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes["Main-Class"] = "com.jlogicgames.kimeria.lwjgl3.Lwjgl3Launcher"
+        attributes["Main-Class"] = "com.jlogicsoftware.kimeria.lwjgl3.Lwjgl3Launcher"
     }
     dependsOn(configurations.runtimeClasspath)
     from({ configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) } })

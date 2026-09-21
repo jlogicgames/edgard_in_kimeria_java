@@ -1,5 +1,5 @@
 allprojects {
-    group = "com.jlogicgames.kimeria"
+    group = "com.jlogicsoftware.kimeria"
     version = "0.0.1"
 
     repositories {

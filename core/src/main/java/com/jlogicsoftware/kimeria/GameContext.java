@@ -1,0 +1,56 @@
+package com.jlogicsoftware.kimeria;
+
+import com.badlogic.gdx.math.Vector2;
+import com.jlogicsoftware.kimeria.input.GamepadInput;
+
+/**
+ * Everything an entity needs from the running game, mirroring what Dart
+ * entities reached via {@code HasGameReference<EdgardInKimeria>}.
+ */
+public interface GameContext {
+    Assets assets();
+
+    GamepadInput gamepad();
+
+    /** Debug aid (F2): ignores lethal damage so a level can be walked end to end. */
+    boolean invulnerable();
+
+    void setInvulnerable(boolean value);
+
+    /** Debug aid (F1): draw hitbox/collision-block gizmos. */
+    boolean debugDraw();
+
+    void setDebugDraw(boolean value);
+
+    boolean playSounds();
+
+    float soundVolume();
+
+    /** name is one of: jump, bounce, collect, hit, disappear */
+    void playSound(String name);
+
+    boolean isGameStarted();
+
+    void setGameStarted(boolean started);
+
+    void addCoin();
+
+    int coinsCollected();
+
+    void loadNextLevel();
+
+    void triggerGameOver();
+
+    void pause();
+
+    boolean isSlowTime();
+
+    void setSlowTime();
+
+    void setNormalTime();
+
+    /** Smoothly moves the world camera toward {@code target} at {@code speed} px/s. */
+    void moveCameraTo(Vector2 target, float speed);
+
+    Vector2 logicalResolution();
+}
