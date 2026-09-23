@@ -1,5 +1,9 @@
 # Edgard in Kimeria
 
+**[Play in your browser](https://jlogicgames.github.io/edgard_in_kimeria_java/)** — the
+web build, deployed automatically from `main` (see
+[`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)).
+
 A 2D platformer, ported to Java and [libGDX](https://libgdx.com/) from the project's
 Flutter/Flame version (with reference to its separate Rust/Bevy version for feature parity —
 full menu system, localization, gamepad support, dev hotkeys).
