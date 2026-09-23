@@ -1,0 +1,31 @@
+name: Build desktop installers
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew packageDesktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edgard-in-kimeria-${{ matrix.os }}
+          path: |
+            lwjgl3/build/jpackage/*.exe
+            lwjgl3/build/jpackage/*.msi
+            lwjgl3/build/jpackage/*.dmg
+            lwjgl3/build/jpackage/*.deb
+            lwjgl3/build/jpackage/*.rpm
