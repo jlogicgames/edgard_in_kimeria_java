@@ -1,5 +1,9 @@
 # Edgard in Kimeria
 
+**[Play in your browser](https://jlogicgames.github.io/edgard_in_kimeria_java/)** — the
+web build, deployed automatically from `main` (see
+[`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)).
+
 A 2D platformer, ported to Java and [libGDX](https://libgdx.com/) from the project's
 Flutter/Flame version (with reference to its separate Rust/Bevy version for feature parity —
 full menu system, localization, gamepad support, dev hotkeys).
@@ -13,15 +17,17 @@ shockwave + ripple, **F4** advance level, **F5** reach a checkpoint.
 ## Building and running
 
 ```sh
-./gradlew run     # builds and launches the desktop build
-./gradlew :lwjgl3:jar     # builds a runnable fat jar at lwjgl3/build/libs/
+./gradlew run             # builds and launches the desktop build
+./gradlew buildDesktop    # builds a runnable fat jar at lwjgl3/build/libs/
 
 ./gradlew runWeb     # web build, dev server with auto-reload
 ./gradlew buildWeb   # static, minified output at web/build/dist/js/release/webapp/
 ```
 
 (`./gradlew` is the Gradle wrapper committed to this repo — no separate Gradle install
-needed. `run` is a root-level alias for `:lwjgl3:run`. The web build uses the
+needed. `run`/`buildDesktop`/`runWeb`/`buildWeb` are root-level aliases for the
+underlying per-module tasks, so no module path or plugin-generated task name needs
+memorizing. The web build uses the
 [gdx-teavm](https://github.com/xpenatan/gdx-teavm) backend, which compiles ordinary JVM
 bytecode to JavaScript via [TeaVM](https://teavm.org/) — see `web/build.gradle.kts` and
 `web/src/main/java/.../WebLauncher.java`. `.github/workflows/deploy-web.yml` builds and
